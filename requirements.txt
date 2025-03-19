@@ -1,0 +1,9 @@
+streamlit
+tensorflow
+numpy
+fpdf
+Pillow
+datasets
+scikit-learn
+huggingface_hub
+smtplib
