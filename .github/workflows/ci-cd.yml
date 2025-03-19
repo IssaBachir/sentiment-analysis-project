@@ -1,0 +1,55 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  install-dependencies:
+    runs-on: windows
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+  train-model:
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Train model
+        run: python scripts/train.py
+
+  evaluate-model:
+    runs-on: ubuntu-latest
+    needs: train-model
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Evaluate model
+        run: python scripts/evaluate.py
+
+  deploy-model:
+    runs-on: ubuntu-latest
+    needs: evaluate-model
+    if: success() && (steps.evaluate-model.outputs.score >= ${{ secrets.THRESHOLD_SCORE }})
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Deploy to Hugging Face
+        run: python scripts/deploy.py
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [train-model, evaluate-model, deploy-model]
+    steps:
+      - name: Send notification email
+        run: python scripts/send_email.py
